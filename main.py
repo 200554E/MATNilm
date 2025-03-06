@@ -18,6 +18,7 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--batch", type=int, default=32, help="batch size")
+    parser.add_argument("--epoch", type=int, default=200, help="epoch size")
     parser.add_argument("--lr", type=float, default=0.001, help="learning rate")
     parser.add_argument("--dropout", type=float, default=0.1, help="dropout")
     parser.add_argument("--hidden", type=int, default=32, help="encoder decoder hidden size")
@@ -103,7 +104,7 @@ if __name__ == '__main__':
     if args.debug:
         epo = 2
     else:
-        epo = 200
+        epo = args.epoch
 
     # splitLoss = False
     # trainFull = True
@@ -116,6 +117,7 @@ if __name__ == '__main__':
 
     config_dict = {
         "input_size": 1,
+        "epoch_size": args.epoch,
         "batch_size": args.batch,
         "hidden": args.hidden,
         "lr": args.lr,
