@@ -4,6 +4,7 @@ import typing
 class TrainConfig(typing.NamedTuple):
 
     input_size: int
+    epoch_size: int
     batch_size: int
     hidden: int
     lr: float
@@ -23,6 +24,7 @@ class TrainConfig(typing.NamedTuple):
     @classmethod
     def from_dict(cls,dikt):
         input_size = dikt['input_size']
+        epoch_size = dikt['epoch_size']
         batch_size = dikt['batch_size']
         hidden = dikt['hidden']
         lr = dikt['lr']
@@ -37,7 +39,7 @@ class TrainConfig(typing.NamedTuple):
         prob2 = dikt['prob2']
         prob3 = dikt['prob3']
 
-        return cls(input_size,batch_size,hidden,lr,dropout,
+        return cls(input_size,epoch_size,batch_size,hidden,lr,dropout,
                    logname,outputLength,inputLength,subName,dataAug=dataAug, prob0=prob0, prob1=prob1, prob2=prob2, prob3=prob3)
 
 
