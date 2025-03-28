@@ -90,7 +90,7 @@ def evaluate_score(y_real, y_predict, y_real_c, y_pred_c, logger):
     return maeScore
 
 def evaluate_score_multi(y_real, y_predict, y_real_c, y_pred_c, logger):
-    listOfAppliance = ['dish_washer', 'fridge', 'microwave', 'washer_dryer', 'inverter_ac']
+    listOfAppliance = ["main", "dish washer", "fridge", "microwave", "washer dryer", "iron"]
     mapeScore = []
     for i in range(y_predict.shape[1]):
         logger.info(f"Evaluate {listOfAppliance[i]}: ")
@@ -359,9 +359,9 @@ def dataAug( X_scaled, Y_scaled, Y_of, sigClass, config):
 
 
 def genList(appliance, j):
-    thre = [50,10,100, 100, 30]  #dishwasher, fridge, microwave, kettle, washmachine
-    ontol = [150, 10, 10, 10, 150]
-    offtol = [10, 10, 5, 5, 10]
+    thre = [50,10,100, 100, 30, 200]  #dishwasher, fridge, microwave, kettle, washmachine
+    ontol = [150, 10, 10, 10, 150, 200],
+    offtol = [10, 10, 5, 5, 10, 200]
     on, off, onduration, offduration = [], [], [], []
     start, end = 0, 0
     onflag = (appliance[0] > thre[j])
