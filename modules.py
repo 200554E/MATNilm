@@ -67,6 +67,7 @@ class ApplBlock(nn.Module):
         self.multihead_attn_f = ApplSA(config)
         self.multihead_attn_m = ApplSA(config)
         self.multihead_attn_w = ApplSA(config)
+        self.multihead_attn_i = ApplSA(config)
 
         self.multihead_attn_r_g = nn.MultiheadAttention(2*config.hidden, 2, batch_first=True)
         self.norm1 = nn.LayerNorm(2*config.hidden)
@@ -75,52 +76,60 @@ class ApplBlock(nn.Module):
         self.frid = ApplFF(config)
         self.micro = ApplFF(config)
         self.wash = ApplFF(config)
+        self.invt = ApplFF(config)
         self.Last = Last
         if Last:
             self.dish_c = ApplFF(config)
             self.frid_c = ApplFF(config)
             self.micro_c = ApplFF(config)
             self.wash_c = ApplFF(config)
+            self.invt_c = ApplFF(config)
 
-    def forward(self, d_r_a, f_r_a, m_r_a, w_r_a):
+    def forward(self, d_r_a, f_r_a, m_r_a, w_r_a,i_r_a):
         attn_output_d = self.multihead_attn_d(d_r_a)
         attn_output_f = self.multihead_attn_f(f_r_a)
         attn_output_m = self.multihead_attn_m(m_r_a)
         attn_output_w = self.multihead_attn_w(w_r_a)
+        attn_output_i = self.multihead_attn_i(i_r_a)
 
-        GlobleAtten_r = torch.cat((attn_output_d.unsqueeze(3), attn_output_f.unsqueeze(3), attn_output_m.unsqueeze(3), attn_output_w.unsqueeze(3)),3)
+        GlobleAtten_r = torch.cat((attn_output_d.unsqueeze(3), attn_output_f.unsqueeze(3), attn_output_m.unsqueeze(3), attn_output_w.unsqueeze(3),attn_output_i.unsqueeze(3)), 3)
         GlobleAtten_r = GlobleAtten_r.permute(0,1,3,2)
         # TODO: change 4
-        GlobleAtten_r = GlobleAtten_r.reshape(-1,4,GlobleAtten_r.shape[-1])
+        GlobleAtten_r = GlobleAtten_r.reshape(-1,5,GlobleAtten_r.shape[-1])
 
         # # Globle attention
         attn_output_r_g, attn_output_weights_r_g = self.multihead_attn_r_g(GlobleAtten_r,GlobleAtten_r,GlobleAtten_r)
         # TODO: change 4
-        attn_output_r_g = attn_output_r_g.reshape(d_r_a.shape[0],d_r_a.shape[1],4,GlobleAtten_r.shape[-1])
+        attn_output_r_g = attn_output_r_g.reshape(d_r_a.shape[0],d_r_a.shape[1],5,GlobleAtten_r.shape[-1])
 
         d_r_a = attn_output_r_g[:,:,0,:]
         f_r_a = attn_output_r_g[:,:,1,:]
         m_r_a = attn_output_r_g[:,:,2,:]
         w_r_a = attn_output_r_g[:,:,3,:]
+        i_r_a = attn_output_r_g[:,:,4,:]  # New index for invt
 
         d_r_a = self.norm1(d_r_a + attn_output_d)
         f_r_a = self.norm1(f_r_a + attn_output_f)
         m_r_a = self.norm1(m_r_a + attn_output_m)
         w_r_a = self.norm1(w_r_a + attn_output_w)
+        i_r_a = self.norm1(i_r_a + attn_output_i)
+
 
         d_r = self.dish(d_r_a)
         f_r = self.frid(f_r_a)
         m_r = self.micro(m_r_a)
         w_r = self.wash(w_r_a)
+        i_r = self.invt(i_r_a)
 
         if self.Last:
             d_c = self.dish_c(d_r_a)
             f_c = self.frid_c(f_r_a)
             m_c = self.micro_c(m_r_a)
             w_c = self.wash_c(w_r_a)
-            return d_r, f_r, m_r, w_r, d_c, f_c, m_c, w_c
+            i_c = self.invt_c(i_r_a)
+            return d_r, f_r, m_r, w_r, i_r, d_c, f_c, m_c, w_c, i_c
 
-        return d_r, f_r, m_r, w_r
+        return d_r, f_r, m_r, w_r, i_r
 
 
 class MATconv(nn.Module):
@@ -148,7 +157,6 @@ class MATconv(nn.Module):
         self.block2 = ApplBlock(config)
         self.block3 = ApplBlock(config,Last=True)
 
-
         self.fc_dr = nn.Sequential(nn.Linear(2*config.hidden, config.hidden),
                                    nn.ReLU(),
                                    nn.Linear(config.hidden, 1))
@@ -174,6 +182,14 @@ class MATconv(nn.Module):
         self.fc_wc = nn.Sequential(nn.Linear(2*config.hidden, config.hidden),
                                    nn.ReLU(),
                                    nn.Linear(config.hidden, 1))
+        
+        self.fc_ir = nn.Sequential(nn.Linear(2*config.hidden, config.hidden),
+                                   nn.ReLU(),
+                                   nn.Linear(config.hidden, 1))  # Regression for invt
+        self.fc_ic = nn.Sequential(nn.Linear(2*config.hidden, config.hidden),
+                                   nn.ReLU(),
+                                   nn.Linear(config.hidden, 1))  # Classification for invt
+        
 
     def forward(self, input_data):
 
@@ -191,14 +207,16 @@ class MATconv(nn.Module):
         # input_encoded = self.norm(input_encoded + self.skipExpand(input_data))
 
         # Attention
-        d_r, f_r, m_r, w_r = self.block1(input_encoded, input_encoded, input_encoded, input_encoded)
-        d_r, f_r, m_r, w_r = self.block2(d_r, f_r, m_r, w_r)
-        d_rr, f_rr, m_rr, w_rr, d_cc, f_cc, m_cc, w_cc = self.block3(d_r, f_r, m_r, w_r)
+        d_r, f_r, m_r, w_r, i_r = self.block1(input_encoded, input_encoded, input_encoded, input_encoded, input_encoded)
+        d_r, f_r, m_r, w_r, i_r = self.block2(d_r, f_r, m_r, w_r, i_r)
+        d_rr, f_rr, m_rr, w_rr, i_rr, d_cc, f_cc, m_cc, w_cc, i_cc = self.block4(d_r, f_r, m_r, w_r, i_r)
+
 
         dc = torch.sigmoid(self.fc_dc(d_cc))
         fc = torch.sigmoid(self.fc_fc(f_cc))
         mc = torch.sigmoid(self.fc_mc(m_cc))
         wc = torch.sigmoid(self.fc_wc(w_cc))
+        ic = torch.sigmoid(self.fc_ic(i_cc))
 
         # dr = torch.relu(self.fc_dr(d_rr)) * dc
         # fr = torch.relu(self.fc_fr(f_rr)) * fc
@@ -209,8 +227,9 @@ class MATconv(nn.Module):
         fr = self.fc_fr(f_rr) * fc
         mr = self.fc_mr(m_rr) * mc
         wr = self.fc_wr(w_rr) * wc
+        ir = self.fc_ir(i_rr) * ic
 
-        y_pred_r = torch.cat((dr,fr,mr, wr),2)
-        y_pred_c = torch.cat((dc,fc,mc, wc),2)
+        y_pred_r = torch.cat((dr,fr,mr, wr,ir),2)
+        y_pred_c = torch.cat((dc,fc,mc, wc,ic),2)
         # print(y_pred_r.shape)
         return y_pred_r, y_pred_c
