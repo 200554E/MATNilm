@@ -209,7 +209,7 @@ class MATconv(nn.Module):
         # Attention
         d_r, f_r, m_r, w_r, i_r = self.block1(input_encoded, input_encoded, input_encoded, input_encoded, input_encoded)
         d_r, f_r, m_r, w_r, i_r = self.block2(d_r, f_r, m_r, w_r, i_r)
-        d_rr, f_rr, m_rr, w_rr, i_rr, d_cc, f_cc, m_cc, w_cc, i_cc = self.block4(d_r, f_r, m_r, w_r, i_r)
+        d_rr, f_rr, m_rr, w_rr, i_rr, d_cc, f_cc, m_cc, w_cc, i_cc = self.block3(d_r, f_r, m_r, w_r, i_r)
 
 
         dc = torch.sigmoid(self.fc_dc(d_cc))
