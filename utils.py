@@ -90,7 +90,7 @@ def evaluate_score(y_real, y_predict, y_real_c, y_pred_c, logger):
     return maeScore
 
 def evaluate_score_multi(y_real, y_predict, y_real_c, y_pred_c, logger):
-    listOfAppliance = ["main", "dish washer", "fridge", "microwave", "washer dryer", "iron"]
+    listOfAppliance = ['dish washer', 'fridge', 'microwave', 'washer dryer', 'iron']
     mapeScore = []
     for i in range(y_predict.shape[1]):
         logger.info(f"Evaluate {listOfAppliance[i]}: ")
