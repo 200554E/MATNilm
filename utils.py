@@ -359,9 +359,9 @@ def dataAug( X_scaled, Y_scaled, Y_of, sigClass, config):
 
 
 def genList(appliance, j):
-    thre = [50,10,100, 100, 30]  #dishwasher, fridge, microwave, kettle, washmachine
-    ontol = [150, 10, 10, 10, 150]
-    offtol = [10, 10, 5, 5, 10]
+    thre = [1567,1220,1893,2335, 3720]  #microwave, inverter_ac, washer dryer, dishwasher, 3ph_fridge_1
+    ontol = [.8*1567,.8*1220 , .8*1893, .8*2335, .8*3720]
+    offtol = [.2*1567,.8*1220 , .2*1893,.2*2335, .2*3720]
     on, off, onduration, offduration = [], [], [], []
     start, end = 0, 0
     onflag = (appliance[0] > thre[j])
