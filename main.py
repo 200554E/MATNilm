@@ -36,7 +36,7 @@ def get_args():
 
 
 def train(t_net, train_Dataloader, vali_Dataloader, config, criterion, modelDir, epo=200):
-    checkpoint_path = './model_checkpoint.pt'
+    checkpoint_path = './model_checkpoint.pth'
     if os.path.exists(checkpoint_path):
         logger.info(f"Loading model checkpoint from {checkpoint_path}")
         model.load_state_dict(torch.load(checkpoint_path))
