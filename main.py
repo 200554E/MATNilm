@@ -36,6 +36,13 @@ def get_args():
 
 
 def train(t_net, train_Dataloader, vali_Dataloader, config, criterion, modelDir, epo=200):
+    checkpoint_path = './model_checkpoint.pt'
+    if os.path.exists(checkpoint_path):
+        logger.info(f"Loading model checkpoint from {checkpoint_path}")
+        model.load_state_dict(torch.load(checkpoint_path))
+    else:
+        logger.info("No checkpoint found, training from scratch.")
+    
     iter_loss = []
     vali_loss = []
     early_stopping_all = utils.EarlyStopping(logger, patience=30, verbose=True)
@@ -92,9 +99,21 @@ def train(t_net, train_Dataloader, vali_Dataloader, config, criterion, modelDir,
     utils.loadModel(logger, net_all, checkpoint_all)
     net_all.model.eval()
     
+    # Base checkpoint path
     checkpoint_path = "./model_checkpoint.pth"
+    if os.path.exists(checkpoint_path): 
+        base, ext = os.path.splitext(checkpoint_path)
+        counter = 1
+        new_path = f"{base}_{counter}{ext}"
+        while os.path.exists(new_path):
+            counter += 1
+            new_path = f"{base}_{counter}{ext}"
+        checkpoint_path = new_path
+    
+    # Save model
     torch.save(model.state_dict(), checkpoint_path)
     print(f"Model saved to {checkpoint_path}")
+    
     return net_all
 
 if __name__ == '__main__':
