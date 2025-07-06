@@ -92,6 +92,9 @@ def train(t_net, train_Dataloader, vali_Dataloader, config, criterion, modelDir,
     utils.loadModel(logger, net_all, checkpoint_all)
     net_all.model.eval()
     
+    checkpoint_path = "./model_checkpoint.pth"
+    torch.save(model.state_dict(), checkpoint_path)
+    print(f"Model saved to {checkpoint_path}")
     return net_all
 
 if __name__ == '__main__':
